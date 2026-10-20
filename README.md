@@ -1,81 +1,103 @@
 # Windows Security Log Analysis
 
-## Overview
+A beginner-friendly cybersecurity portfolio project exploring Windows authentication events and a small Python-based CSV analyzer.
 
-This beginner cybersecurity project documents my analysis of Windows Security Event Logs using Windows Event Viewer.
+## Why I built this
 
-The goal was to understand successful and failed logon events and practice basic Security Operations Center (SOC) investigation skills.
+I am learning the fundamentals of Security Operations Center (SOC) investigations. This project documents a guided investigation of Windows Event Viewer on my own computer and demonstrates basic Python automation with **synthetic** log data.
 
-## Tools Used
+## Tools
 
-- Windows 11
-- Windows Event Viewer
-- Windows Security Event Logs
+- Windows Event Viewer (Windows Logs → Security)
+- Python 3 (standard library only)
+- GitHub
 
-## Objectives
+## Part 1 — Manual investigation
 
-- Identify successful and failed logon events.
-- Understand Windows Event IDs 4624 and 4625.
-- Analyze logon types and authentication status codes.
-- Document findings and assess their security significance.
+### Successful logon: Event ID 4624
 
-## Investigation 1: Successful Logon (Event ID 4624)
-
-| Field | Observed Value |
-|---|---|
+| Field | Observed value |
+| --- | --- |
 | Event ID | 4624 |
-| Audit Result | Success |
+| Result | Audit Success |
 | Logon Type | 5 (Service) |
-| Target Account | SYSTEM |
+| Target account | SYSTEM |
 
-### Analysis
+**Interpretation:** The event is consistent with a Windows service signing in using the built-in SYSTEM account. This observation alone cannot establish that the system is safe or compromised.
 
-Event ID 4624 records a successful logon. Logon Type 5 indicates a service logon.
+### Failed logon: Event ID 4625
 
-The target account was SYSTEM, a built-in Windows account commonly used by system services.
-
-**Assessment:** This event is consistent with normal Windows service activity. The event alone does not establish whether the overall system is secure.
-
-## Investigation 2: Failed Logon (Event ID 4625)
-
-| Field | Observed Value |
-|---|---|
+| Field | Observed value |
+| --- | --- |
 | Event ID | 4625 |
-| Audit Result | Failure |
+| Result | Audit Failure |
 | Logon Type | 2 (Interactive) |
-| Status | 0xC000006D |
-| SubStatus | 0xC0000380 |
-| Logon Process | User32 |
-| Authentication Package | Negotiate |
+| Status | `0xC000006D` |
+| SubStatus | `0xC0000380` |
+| Logon process | User32 |
+| Authentication package | Negotiate |
 
-### Analysis
+**Interpretation:** The log records an unsuccessful interactive authentication attempt. Status `0xC000006D` indicates a logon failure. The reviewed evidence does not establish the precise cause or indicate an attack by itself. A SOC analyst would correlate additional events and context before drawing conclusions.
 
-Event ID 4625 records a failed logon. Logon Type 2 indicates an interactive logon attempt.
+## Part 2 — Python CSV log analyzer
 
-Status `0xC000006D` indicates that authentication failed. The specific cause of the failure was not established from the reviewed information.
+`log_analyzer.py` reads a CSV file containing an `EventID` column and counts events 4624 and 4625. The alert is a **simple count-based threshold**, not an intrusion detection verdict.
 
-**Assessment:** One failed interactive logon does not by itself indicate an attack. Further investigation would require additional event context and correlation.
+The included `sample_events.csv` contains **fictional training data**, not exports from my computer.
 
-## Skills Practiced
+### Run
 
-- Navigating Windows Event Viewer
-- Filtering Windows Security Logs by Event ID
-- Interpreting logon types and authentication results
-- Documenting security findings
-- Distinguishing observed facts from assumptions
+Open PowerShell in this folder and run:
 
-## Security and Privacy
+```powershell
+python log_analyzer.py
+```
 
-This project was conducted on my own Windows computer. Personal account details, raw event logs, and sensitive system information are not published.
+If `python` is not recognized, try:
 
-## Conclusion
+```powershell
+py log_analyzer.py
+```
 
-This project introduced me to Windows security event analysis and basic SOC investigation methods.
+Expected result for the sample data:
 
-It provided hands-on practice interpreting authentication events and documenting findings for further review.
+```text
+Windows Security Log Analysis
+-----------------------------
+Successful logons (4624): 3
+Failed logons (4625): 3
+Alert: Failed logon count reached the configured threshold.
+Note: This is a simple count, not evidence of an attack.
+```
 
-## Future Improvements
+You can also specify a CSV file and threshold:
 
-- Compare multiple authentication events over time.
-- Analyze additional Windows Security Event IDs.
-- Develop a simple Python script to summarize sample log data.
+```powershell
+python log_analyzer.py sample_events.csv --threshold 5
+```
+
+### Tests
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+## Skills practiced
+
+- Locating and filtering Windows Security events
+- Interpreting Windows logon event IDs and logon types
+- Writing a Python CSV analyzer
+- Testing a small Python script
+- Documenting observations without overstating security conclusions
+
+## Privacy and scope
+
+- Analysis was limited to my own computer.
+- No passwords, real usernames, IP addresses, or raw private security logs are included.
+- The CSV dataset is synthetic and intended for learning.
+
+## Future improvements
+
+- Group failures by account and time window.
+- Parse sanitized event exports from a controlled lab.
+- Compare baseline activity against unusual spikes.
